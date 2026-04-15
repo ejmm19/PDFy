@@ -584,6 +584,7 @@ async function renderPage(pageNum) {
 
   // Extract text items for edit-text tool
   const textContent = await pdfPage.getTextContent();
+  const pdfCtx = pdfCanvas.getContext('2d');
 
   const textItems = textContent.items
     .filter(item => item.str && item.str.trim())
@@ -596,6 +597,22 @@ async function renderPage(pageNum) {
       const w = (item.width || 0) * state.scale;
       const h = fontSize * state.scale * 1.2;
 
+      // Get real font family from styles
+      const styleInfo = textContent.styles[item.fontName] || {};
+      const realFontFamily = styleInfo.fontFamily || '';
+
+      // Sample text color from rendered canvas (center of text area)
+      const sampleX = Math.round(x + 2);
+      const sampleY = Math.round(y + h * 0.5);
+      const textColor = sampleTextColor(pdfCtx, sampleX, sampleY, Math.round(w), Math.round(h));
+
+      // Sample background color (just above the text)
+      const bgY = Math.max(0, Math.round(y - 4));
+      const bgColor = sampleBgColor(pdfCtx, Math.round(x), bgY, Math.round(w || 20));
+
+      // Detect bold by measuring stroke density in rendered pixels
+      const isBold = detectBoldFromPixels(pdfCtx, Math.round(x), Math.round(y), Math.round(w || 20), Math.round(h), fontSize * state.scale);
+
       return {
         str: item.str,
         x,
@@ -603,7 +620,11 @@ async function renderPage(pageNum) {
         width: w || fontSize * state.scale * item.str.length * 0.6,
         height: h,
         fontSize: fontSize * state.scale,
-        fontFamily: item.fontName || 'Helvetica',
+        fontName: item.fontName || '',
+        realFontFamily,
+        textColor,
+        bgColor,
+        isBold,
       };
     });
 
@@ -904,61 +925,7 @@ function addArrowHead(fc, line) {
 
 // ===== Edit Existing Text =====
 
-// Group nearby text items into logical lines/blocks
-function groupTextItems(textItems) {
-  if (!textItems || textItems.length === 0) return [];
-
-  // Sort by y position (top to bottom), then x (left to right)
-  const sorted = [...textItems].sort((a, b) => {
-    const yDiff = a.y - b.y;
-    if (Math.abs(yDiff) < 5) return a.x - b.x;
-    return yDiff;
-  });
-
-  const groups = [];
-  let currentGroup = [sorted[0]];
-
-  for (let i = 1; i < sorted.length; i++) {
-    const prev = currentGroup[currentGroup.length - 1];
-    const curr = sorted[i];
-
-    // Same line: similar y position and close horizontally
-    const sameLine = Math.abs(curr.y - prev.y) < prev.fontSize * 0.5;
-    const closeX = curr.x - (prev.x + prev.width) < prev.fontSize * 2;
-
-    if (sameLine && closeX) {
-      currentGroup.push(curr);
-    } else {
-      groups.push(currentGroup);
-      currentGroup = [curr];
-    }
-  }
-  groups.push(currentGroup);
-
-  return groups.map(group => {
-    const minX = Math.min(...group.map(t => t.x));
-    const minY = Math.min(...group.map(t => t.y));
-    const maxX = Math.max(...group.map(t => t.x + t.width));
-    const maxY = Math.max(...group.map(t => t.y + t.height));
-    const fontSize = group[0].fontSize;
-    const fontFamily = group[0].fontFamily;
-    const text = group.map(t => t.str).join(' ');
-
-    return {
-      str: text,
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-      fontSize,
-      fontFamily,
-      items: group,
-    };
-  });
-}
-
 function showTextOverlays(pageIndex) {
-  // Only remove overlays for this specific page wrapper
   const wrapper = pageContainer.children[pageIndex];
   if (!wrapper) return;
   wrapper.querySelectorAll('.text-overlay').forEach(el => el.remove());
@@ -966,31 +933,24 @@ function showTextOverlays(pageIndex) {
   if (pageIndex < 0 || !state.pages[pageIndex]) return;
   const pageData = state.pages[pageIndex];
 
-
-
-  const groups = groupTextItems(pageData.textItems);
-
-
-  groups.forEach((group, idx) => {
-    // Skip groups with no meaningful dimensions
-    const w = Math.max(group.width, 20);
-    const h = Math.max(group.height, group.fontSize * 1.3);
+  // Each individual text item gets its own clickable overlay
+  pageData.textItems.forEach((item) => {
+    const w = Math.max(item.width, 10);
+    const h = Math.max(item.height, item.fontSize * 1.15);
 
     const overlay = document.createElement('div');
     overlay.className = 'text-overlay';
-    overlay.style.left = group.x + 'px';
-    overlay.style.top = group.y + 'px';
+    overlay.style.left = item.x + 'px';
+    overlay.style.top = item.y + 'px';
     overlay.style.width = w + 'px';
     overlay.style.height = h + 'px';
-    overlay.dataset.groupIndex = idx;
-    overlay.title = group.str;
+    overlay.title = item.str;
 
     overlay.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
-
-      convertTextToEditable(pageIndex, group);
+      convertTextToEditable(pageIndex, item);
       removeTextOverlays();
     });
 
@@ -1002,21 +962,30 @@ function removeTextOverlays() {
   document.querySelectorAll('.text-overlay').forEach(el => el.remove());
 }
 
-function convertTextToEditable(pageIndex, group) {
+function convertTextToEditable(pageIndex, item) {
   const pageData = state.pages[pageIndex];
   const fc = pageData.fabricCanvas;
 
-  // Determine font properties from the PDF font name
-  const fontInfo = parsePdfFontName(group.fontFamily);
+  // Resolve font
+  const fontInfo = resolvePdfFont(item.realFontFamily, item.fontName);
+  const isBold = item.isBold || fontInfo.bold;
+  const isItalic = fontInfo.italic;
+  const textColor = item.textColor || '#000000';
+  const bgColor = item.bgColor || '#ffffff';
 
-  // 1. Create white rectangle to cover original text
-  const padding = 2;
+  // Precise whiteout matching exact text bounds
+  const w = Math.max(item.width, 10);
+  const h = Math.max(item.height, item.fontSize * 1.15);
+  // Slightly oversized to fully cover the original rendering
+  const padX = 2;
+  const padY = 1;
+
   const whiteout = new fabric.Rect({
-    left: group.x - padding,
-    top: group.y - padding,
-    width: group.width + padding * 2,
-    height: group.height + padding * 2,
-    fill: '#ffffff',
+    left: item.x - padX,
+    top: item.y - padY,
+    width: w + padX * 2,
+    height: h + padY * 2,
+    fill: bgColor,
     stroke: 'transparent',
     strokeWidth: 0,
     selectable: false,
@@ -1024,47 +993,251 @@ function convertTextToEditable(pageIndex, group) {
     _isEditWhiteout: true,
   });
 
-  // 2. Create editable text object on top
-  const textObj = new fabric.IText(group.str, {
-    left: group.x,
-    top: group.y,
-    fontSize: group.fontSize,
+  // IText at exact position, locked so it can't be dragged
+  const textObj = new fabric.IText(item.str, {
+    left: item.x,
+    top: item.y,
+    fontSize: item.fontSize,
     fontFamily: fontInfo.family,
-    fontWeight: fontInfo.bold ? 'bold' : 'normal',
-    fontStyle: fontInfo.italic ? 'italic' : 'normal',
-    fill: '#000000',
+    fontWeight: isBold ? 'bold' : 'normal',
+    fontStyle: isItalic ? 'italic' : 'normal',
+    fill: textColor,
     editable: true,
+    // Lock position — edit content only, like Sejda
+    lockMovementX: true,
+    lockMovementY: true,
+    lockScalingX: true,
+    lockScalingY: true,
+    lockRotation: true,
+    hasControls: false,
+    hasBorders: false,
+    borderColor: 'transparent',
+    editingBorderColor: '#0078ff',
+    cursorColor: '#0078ff',
+    padding: 0,
     _isEditedText: true,
     _whiteoutId: whiteout,
+    _originalStr: item.str,
+  });
+
+  // When user finishes editing (clicks away), resize whiteout to match new text
+  textObj.on('editing:exited', () => {
+    const bounds = textObj.getBoundingRect();
+    whiteout.set({
+      left: bounds.left - padX,
+      top: bounds.top - padY,
+      width: bounds.width + padX * 2,
+      height: bounds.height + padY * 2,
+    });
+    // Unlock so user can reposition if needed after editing
+    textObj.set({
+      lockMovementX: false,
+      lockMovementY: false,
+      hasControls: true,
+      hasBorders: true,
+      borderColor: '#0078ff',
+    });
+    fc.renderAll();
+    saveState();
   });
 
   fc.add(whiteout);
   fc.add(textObj);
   fc.setActiveObject(textObj);
   textObj.enterEditing();
-  textObj.selectAll();
   fc.renderAll();
 
-  // Switch to select tool to allow editing
+  // Update property bar to match detected values
+  $('prop-color').value = textColor;
+  const fontSelect = $('prop-font-family');
+  const fontOption = Array.from(fontSelect.options).find(o => o.value === fontInfo.family);
+  fontSelect.value = fontOption ? fontInfo.family : 'Arial';
+  fontSelect.style.fontFamily = fontSelect.value;
+  $('prop-font-size').value = findClosestFontSize(item.fontSize);
+  $('prop-bold').classList.toggle('active', isBold);
+  $('prop-italic').classList.toggle('active', isItalic);
+
   setTool('select');
   saveState();
-  showToast('Texto listo para editar');
 }
 
-function parsePdfFontName(fontName) {
+function findClosestFontSize(size) {
+  const sizes = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72];
+  let closest = sizes[0];
+  let minDiff = Math.abs(size - closest);
+  for (const s of sizes) {
+    const diff = Math.abs(size - s);
+    if (diff < minDiff) { minDiff = diff; closest = s; }
+  }
+  return closest;
+}
+
+// Resolve PDF font to the best available web/system font
+function resolvePdfFont(realFontFamily, fontName) {
+  const real = (realFontFamily || '').toLowerCase();
   const name = (fontName || '').toLowerCase();
-  const bold = name.includes('bold') || name.includes('black') || name.includes('heavy');
-  const italic = name.includes('italic') || name.includes('oblique');
+  const combined = real + ' ' + name;
 
-  let family = 'Helvetica';
-  if (name.includes('times') || name.includes('serif')) family = 'Times New Roman';
-  else if (name.includes('courier') || name.includes('mono')) family = 'Courier New';
-  else if (name.includes('arial')) family = 'Arial';
-  else if (name.includes('georgia')) family = 'Georgia';
-  else if (name.includes('verdana')) family = 'Verdana';
-  else if (name.includes('helvetica')) family = 'Helvetica';
+  const bold = /bold|black|heavy|demi/i.test(combined);
+  const italic = /italic|oblique|slant/i.test(combined);
 
-  return { family, bold, italic };
+  // Map of PDF font family patterns -> web font
+  const fontMap = [
+    // Exact matches first
+    { pattern: /\barial\b/, font: 'Arial' },
+    { pattern: /\bhelvetica\b/, font: 'Helvetica' },
+    { pattern: /\btimes/, font: 'Times New Roman' },
+    { pattern: /\bcourier/, font: 'Courier New' },
+    { pattern: /\bgeorgia\b/, font: 'Georgia' },
+    { pattern: /\bverdana\b/, font: 'Verdana' },
+    { pattern: /\btahoma\b/, font: 'Tahoma' },
+    { pattern: /\btrebuchet/, font: 'Trebuchet MS' },
+    { pattern: /\bpalatino/, font: 'Palatino Linotype' },
+    { pattern: /\bgaramond/, font: 'Garamond' },
+    { pattern: /\bcalibri/, font: 'Calibri, Inter' },
+    { pattern: /\bcambria/, font: 'Cambria, Georgia' },
+    { pattern: /\bconsolas/, font: 'Consolas, Inconsolata' },
+    { pattern: /\bsegoe/, font: 'Segoe UI' },
+    { pattern: /\broboto\b/, font: 'Roboto' },
+    { pattern: /\bopen.?sans/, font: 'Open Sans' },
+    { pattern: /\blato\b/, font: 'Lato' },
+    { pattern: /\bmontserrat/, font: 'Montserrat' },
+    { pattern: /\bpoppins/, font: 'Poppins' },
+    { pattern: /\bnoto.?sans/, font: 'Noto Sans' },
+    { pattern: /\bubuntu\b/, font: 'Ubuntu' },
+    { pattern: /\binter\b/, font: 'Inter' },
+    { pattern: /\bfira.?sans/, font: 'Fira Sans' },
+    // Category-based fallbacks for generic PDF font names
+    { pattern: /\bsans/, font: 'Arial' },
+    { pattern: /\bserif/, font: 'Times New Roman' },
+    { pattern: /\bmono/, font: 'Courier New' },
+  ];
+
+  // Try matching against realFontFamily first (more reliable)
+  for (const { pattern, font } of fontMap) {
+    if (pattern.test(real)) return { family: font, bold, italic };
+  }
+
+  // Then try fontName (internal PDF name)
+  for (const { pattern, font } of fontMap) {
+    if (pattern.test(name)) return { family: font, bold, italic };
+  }
+
+  // If realFontFamily looks like a real name (not an internal code), use it directly
+  if (realFontFamily && !/^g_d\d|^[A-Z]{6}\+|^T\d+_\d/.test(realFontFamily)) {
+    return { family: realFontFamily, bold, italic };
+  }
+
+  // Default: use Arial as the most universal fallback
+  return { family: 'Arial', bold, italic };
+}
+
+// Sample text color by scanning pixels in the text area
+function sampleTextColor(ctx, x, y, w, h) {
+  if (!ctx || w <= 0 || h <= 0) return '#000000';
+  try {
+    const scanW = Math.min(Math.max(w, 10), 200);
+    const scanH = Math.min(Math.max(h, 5), 40);
+    const sx = Math.max(0, Math.round(x));
+    const sy = Math.max(0, Math.round(y));
+    const imageData = ctx.getImageData(sx, sy, scanW, scanH);
+    const data = imageData.data;
+
+    // Find the darkest non-white pixel (most likely the text color)
+    let darkestR = 255, darkestG = 255, darkestB = 255;
+    let darkestLum = 255 * 3;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+      if (a < 128) continue; // skip transparent
+      const lum = r + g + b;
+      if (lum < darkestLum) {
+        darkestLum = lum;
+        darkestR = r; darkestG = g; darkestB = b;
+      }
+    }
+
+    return rgbToHex(darkestR, darkestG, darkestB);
+  } catch (e) {
+    return '#000000';
+  }
+}
+
+// Sample background color by scanning pixels above the text
+function sampleBgColor(ctx, x, y, w) {
+  if (!ctx || w <= 0) return '#ffffff';
+  try {
+    const sx = Math.max(0, Math.round(x));
+    const sy = Math.max(0, Math.round(y));
+    const scanW = Math.min(Math.max(w, 10), 100);
+    const imageData = ctx.getImageData(sx, sy, scanW, 3);
+    const data = imageData.data;
+
+    // Find the most common (brightest) color — likely the background
+    let totalR = 0, totalG = 0, totalB = 0, count = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+      if (a < 128) continue;
+      totalR += r; totalG += g; totalB += b; count++;
+    }
+
+    if (count === 0) return '#ffffff';
+    return rgbToHex(
+      Math.round(totalR / count),
+      Math.round(totalG / count),
+      Math.round(totalB / count)
+    );
+  } catch (e) {
+    return '#ffffff';
+  }
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(c => c.toString(16).padStart(2, '0')).join('');
+}
+
+// Detect if text is bold by analyzing stroke weight of rendered text
+function detectBoldFromPixels(ctx, x, y, w, h, fontSize) {
+  if (!ctx || w <= 0 || h <= 0 || fontSize <= 0) return false;
+  try {
+    const sx = Math.max(0, x);
+    const sy = Math.max(0, y);
+    const scanW = Math.min(Math.max(w, 10), 300);
+    const scanH = Math.min(Math.max(h, 5), 60);
+    const imageData = ctx.getImageData(sx, sy, scanW, scanH);
+    const data = imageData.data;
+
+    // Measure average darkness of dark pixels (stroke intensity)
+    // Bold strokes are wider, so more pixels are fully dark vs anti-aliased
+    let darkPixels = 0;
+    let veryDarkPixels = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+      if (a < 128) continue;
+      const lum = r + g + b;
+      if (lum < 500) darkPixels++;      // somewhat dark
+      if (lum < 200) veryDarkPixels++;   // very dark (core of stroke)
+    }
+
+    if (darkPixels < 5) return false;
+
+    // Bold text has more "core" dark pixels relative to edge/anti-aliased pixels
+    // because bold strokes are wider, the ratio of very-dark to somewhat-dark is higher
+    const coreRatio = veryDarkPixels / darkPixels;
+
+    // Also consider: bold text takes more width per character
+    const charsCount = Math.max(1, Math.round(w / (fontSize * 0.6)));
+    const widthPerChar = w / charsCount;
+    const expectedWidth = fontSize * 0.55; // regular text ~0.55 of fontSize per char
+    const widthRatio = widthPerChar / expectedWidth;
+
+    // Combined heuristic: bold if core ratio is high OR width ratio suggests boldness
+    return coreRatio > 0.7 || widthRatio > 1.15;
+  } catch (e) {
+    return false;
+  }
 }
 
 // ===== History (Undo/Redo) =====

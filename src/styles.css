@@ -508,18 +508,18 @@ body {
 /* ===== Text Edit Overlays ===== */
 .text-overlay {
   position: absolute;
-  border: 2px dashed rgba(0, 120, 255, 0.5);
-  background: rgba(0, 120, 255, 0.06);
+  border: none;
+  background: transparent;
   cursor: text;
   z-index: 200;
-  transition: background 0.15s, border-color 0.15s;
-  border-radius: 3px;
   pointer-events: auto;
+  outline: 1px solid transparent;
+  transition: outline-color 0.1s, background 0.1s;
 }
 
 .text-overlay:hover {
-  background: rgba(0, 120, 255, 0.15);
-  border-color: rgba(0, 120, 255, 0.8);
+  outline-color: rgba(0, 120, 255, 0.5);
+  background: rgba(0, 120, 255, 0.06);
 }
 
 /* ===== Fabric.js overrides ===== */
