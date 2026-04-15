@@ -428,6 +428,7 @@ function setupDragDrop() {
   document.addEventListener('dragover', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
   });
 
   document.addEventListener('drop', (e) => {

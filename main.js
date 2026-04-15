@@ -23,6 +23,9 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 
+  // Prevent Electron from handling drag-and-drop (navigating to the file)
+  mainWindow.webContents.on('will-navigate', (e) => e.preventDefault());
+
   // Log renderer errors
   mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
     if (level >= 2) console.log(`[RENDERER] ${message}`);
