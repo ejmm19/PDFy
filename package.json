@@ -1,0 +1,53 @@
+{
+  "name": "pdfy",
+  "version": "1.0.0",
+  "description": "PDFy - Editor de PDF local",
+  "main": "main.js",
+  "scripts": {
+    "copy-worker": "node -e \"require('fs').cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','dist/pdf.worker.mjs')\"",
+    "bundle": "esbuild src/renderer.js --bundle --outfile=dist/renderer.bundle.js --platform=browser --format=iife --loader:.js=js && npm run copy-worker",
+    "start": "npm run bundle && electron .",
+    "build": "npm run bundle && electron-builder",
+    "build:win": "npm run bundle && electron-builder --win",
+    "build:mac": "npm run bundle && electron-builder --mac",
+    "build:linux": "npm run bundle && electron-builder --linux",
+    "pack": "npm run bundle && electron-builder --dir"
+  },
+  "author": "PDFy",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "esbuild": "^0.28.0"
+  },
+  "dependencies": {
+    "fabric": "^5.3.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.7.76"
+  },
+  "build": {
+    "appId": "com.pdfy.editor",
+    "productName": "PDFy",
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "assets/icon.png",
+      "category": "Office"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache",
+      "!pdfs-test",
+      "!*.md"
+    ]
+  }
+}

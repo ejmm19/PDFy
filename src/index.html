@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDFy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&family=Open+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Montserrat:ital,wght@0,400;0,700;1,400;1,700&family=Poppins:ital,wght@0,400;0,700;1,400;1,700&family=Inter:ital,wght@0,400;0,700;1,400;1,700&family=Nunito:ital,wght@0,400;0,700;1,400;1,700&family=Raleway:ital,wght@0,400;0,700;1,400;1,700&family=Ubuntu:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Merriweather:ital,wght@0,400;0,700;1,400;1,700&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&family=PT+Serif:ital,wght@0,400;0,700;1,400;1,700&family=Oswald:wght@400;700&family=Quicksand:wght@400;700&family=Cabin:ital,wght@0,400;0,700;1,400;1,700&family=Source+Sans+3:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Rubik:ital,wght@0,400;0,700;1,400;1,700&family=Work+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Fira+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Mulish:ital,wght@0,400;0,700;1,400;1,700&family=Barlow:ital,wght@0,400;0,700;1,400;1,700&family=Josefin+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Karla:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Manrope:wght@400;700&family=Inconsolata:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Sans:ital,wght@0,400;0,700;1,400;1,700&family=IBM+Plex+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Crimson+Text:ital,wght@0,400;0,700;1,400;1,700&family=Lora:ital,wght@0,400;0,700;1,400;1,700&family=Bitter:ital,wght@0,400;0,700;1,400;1,700&family=Archivo:ital,wght@0,400;0,700;1,400;1,700&family=Exo+2:ital,wght@0,400;0,700;1,400;1,700&family=Comfortaa:wght@400;700&family=Pacifico&family=Dancing+Script:wght@400;700&family=Lobster&family=Caveat:wght@400;700&family=Satisfy&family=Great+Vibes&family=Sacramento&family=Permanent+Marker&family=Indie+Flower&family=Shadows+Into+Light&family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Welcome screen -->
+  <div id="welcome-screen" class="welcome-screen">
+    <div class="welcome-content">
+      <h1 class="welcome-title">PDFy</h1>
+      <p class="welcome-subtitle">Editor de PDF sin limites</p>
+      <button id="btn-open-welcome" class="btn-primary btn-large">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Abrir PDF
+      </button>
+      <p class="welcome-hint">o arrastra un archivo PDF aqui</p>
+    </div>
+  </div>
+
+  <!-- Main editor -->
+  <div id="editor-container" class="editor-container hidden">
+    <!-- Top toolbar -->
+    <header class="toolbar">
+      <div class="toolbar-left">
+        <span class="app-logo">PDFy</span>
+        <span class="file-name" id="file-name"></span>
+      </div>
+      <div class="toolbar-center">
+        <!-- Tool groups -->
+        <div class="tool-group">
+          <button class="tool-btn" id="tool-select" title="Seleccionar (V)" data-tool="select">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-hand" title="Mover (H)" data-tool="hand">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10V6a2 2 0 0 0-4 0v8l-1.46-2.19a2 2 0 0 0-3.08 2.67L7.5 22h11l3-8.5a2 2 0 0 0-1.64-2.78L18 11z"/></svg>
+          </button>
+        </div>
+
+        <div class="tool-separator"></div>
+
+        <div class="tool-group">
+          <button class="tool-btn" id="tool-edit-text" title="Editar texto existente (F)" data-tool="editText">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-text" title="Texto nuevo (T)" data-tool="text">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-image" title="Imagen" data-tool="image">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </button>
+        </div>
+
+        <div class="tool-separator"></div>
+
+        <div class="tool-group">
+          <button class="tool-btn" id="tool-draw" title="Dibujar / Firma (D)" data-tool="draw">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-highlight" title="Resaltar (G)" data-tool="highlight">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l-6 6v3h9l3-3"/><path d="M22 12l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-eraser" title="Borrador (E)" data-tool="eraser">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 20H7L3 16l9-9 8 8-4 4"/><path d="M6.5 13.5L12 8"/></svg>
+          </button>
+        </div>
+
+        <div class="tool-separator"></div>
+
+        <div class="tool-group">
+          <button class="tool-btn" id="tool-rect" title="Rectangulo (R)" data-tool="rect">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-circle" title="Circulo (C)" data-tool="circle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-line" title="Linea (L)" data-tool="line">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="19" x2="19" y2="5"/></svg>
+          </button>
+          <button class="tool-btn" id="tool-arrow" title="Flecha (A)" data-tool="arrow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+
+        <div class="tool-separator"></div>
+
+        <div class="tool-group">
+          <button class="tool-btn" id="tool-whiteout" title="Borrar contenido (W)" data-tool="whiteout">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <button class="tool-btn" id="btn-undo" title="Deshacer (Ctrl+Z)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-redo" title="Rehacer (Ctrl+Y)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.13-9.36L23 10"/></svg>
+        </button>
+        <div class="tool-separator"></div>
+        <button class="btn-chip" id="btn-open-file" title="Abrir otro PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Abrir
+        </button>
+        <button class="btn-primary" id="btn-save" title="Guardar PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Guardar
+        </button>
+      </div>
+    </header>
+
+    <!-- Properties bar -->
+    <div class="properties-bar" id="properties-bar">
+      <!-- Text properties -->
+      <div class="prop-group" id="props-text">
+        <select id="prop-font-family" class="prop-select prop-select-font" title="Fuente">
+          <optgroup label="Populares">
+            <option value="Arial" selected>Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Roboto">Roboto</option>
+            <option value="Open Sans">Open Sans</option>
+            <option value="Inter">Inter</option>
+            <option value="Lato">Lato</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Poppins">Poppins</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Georgia">Georgia</option>
+          </optgroup>
+          <optgroup label="Sans Serif">
+            <option value="Nunito">Nunito</option>
+            <option value="Raleway">Raleway</option>
+            <option value="Ubuntu">Ubuntu</option>
+            <option value="PT Sans">PT Sans</option>
+            <option value="Oswald">Oswald</option>
+            <option value="Quicksand">Quicksand</option>
+            <option value="Cabin">Cabin</option>
+            <option value="Source Sans 3">Source Sans 3</option>
+            <option value="Noto Sans">Noto Sans</option>
+            <option value="Rubik">Rubik</option>
+            <option value="Work Sans">Work Sans</option>
+            <option value="Fira Sans">Fira Sans</option>
+            <option value="Mulish">Mulish</option>
+            <option value="Barlow">Barlow</option>
+            <option value="Josefin Sans">Josefin Sans</option>
+            <option value="Karla">Karla</option>
+            <option value="DM Sans">DM Sans</option>
+            <option value="Manrope">Manrope</option>
+            <option value="IBM Plex Sans">IBM Plex Sans</option>
+            <option value="Archivo">Archivo</option>
+            <option value="Exo 2">Exo 2</option>
+            <option value="Comfortaa">Comfortaa</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Tahoma">Tahoma</option>
+            <option value="Segoe UI">Segoe UI</option>
+            <option value="Impact">Impact</option>
+          </optgroup>
+          <optgroup label="Serif">
+            <option value="Playfair Display">Playfair Display</option>
+            <option value="Merriweather">Merriweather</option>
+            <option value="PT Serif">PT Serif</option>
+            <option value="Libre Baskerville">Libre Baskerville</option>
+            <option value="Lora">Lora</option>
+            <option value="Crimson Text">Crimson Text</option>
+            <option value="Bitter">Bitter</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Palatino Linotype">Palatino Linotype</option>
+            <option value="Book Antiqua">Book Antiqua</option>
+            <option value="Garamond">Garamond</option>
+          </optgroup>
+          <optgroup label="Monoespaciadas">
+            <option value="Inconsolata">Inconsolata</option>
+            <option value="Space Mono">Space Mono</option>
+            <option value="IBM Plex Mono">IBM Plex Mono</option>
+            <option value="Consolas">Consolas</option>
+            <option value="Lucida Console">Lucida Console</option>
+          </optgroup>
+          <optgroup label="Manuscritas / Decorativas">
+            <option value="Pacifico">Pacifico</option>
+            <option value="Dancing Script">Dancing Script</option>
+            <option value="Lobster">Lobster</option>
+            <option value="Caveat">Caveat</option>
+            <option value="Satisfy">Satisfy</option>
+            <option value="Great Vibes">Great Vibes</option>
+            <option value="Sacramento">Sacramento</option>
+            <option value="Permanent Marker">Permanent Marker</option>
+            <option value="Indie Flower">Indie Flower</option>
+            <option value="Shadows Into Light">Shadows Into Light</option>
+            <option value="Amatic SC">Amatic SC</option>
+            <option value="Comic Sans MS">Comic Sans MS</option>
+          </optgroup>
+        </select>
+        <select id="prop-font-size" class="prop-select prop-select-sm" title="Tamano">
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="12">12</option>
+          <option value="14" selected>14</option>
+          <option value="16">16</option>
+          <option value="18">18</option>
+          <option value="20">20</option>
+          <option value="24">24</option>
+          <option value="28">28</option>
+          <option value="32">32</option>
+          <option value="36">36</option>
+          <option value="48">48</option>
+          <option value="64">64</option>
+          <option value="72">72</option>
+        </select>
+        <button class="tool-btn prop-btn" id="prop-bold" title="Negrita">
+          <strong>B</strong>
+        </button>
+        <button class="tool-btn prop-btn" id="prop-italic" title="Cursiva">
+          <em>I</em>
+        </button>
+        <button class="tool-btn prop-btn" id="prop-underline" title="Subrayado">
+          <u>U</u>
+        </button>
+      </div>
+
+      <!-- Color properties -->
+      <div class="prop-group" id="props-color">
+        <label class="prop-label">Color</label>
+        <input type="color" id="prop-color" class="prop-color" value="#000000" title="Color">
+      </div>
+
+      <!-- Stroke properties -->
+      <div class="prop-group" id="props-stroke">
+        <label class="prop-label">Borde</label>
+        <input type="color" id="prop-stroke-color" class="prop-color" value="#000000" title="Color de borde">
+        <select id="prop-stroke-width" class="prop-select prop-select-sm" title="Grosor">
+          <option value="1">1px</option>
+          <option value="2" selected>2px</option>
+          <option value="3">3px</option>
+          <option value="4">4px</option>
+          <option value="5">5px</option>
+          <option value="8">8px</option>
+        </select>
+      </div>
+
+      <!-- Fill properties -->
+      <div class="prop-group" id="props-fill">
+        <label class="prop-label">Relleno</label>
+        <input type="color" id="prop-fill-color" class="prop-color" value="#ffffff" title="Color de relleno">
+        <button class="tool-btn prop-btn" id="prop-no-fill" title="Sin relleno">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+        </button>
+      </div>
+
+      <!-- Opacity -->
+      <div class="prop-group" id="props-opacity">
+        <label class="prop-label">Opacidad</label>
+        <input type="range" id="prop-opacity" class="prop-range" min="0" max="100" value="100">
+        <span id="prop-opacity-val" class="prop-val">100%</span>
+      </div>
+
+      <!-- Delete -->
+      <div class="prop-group" id="props-delete">
+        <button class="tool-btn prop-btn prop-btn-danger" id="prop-delete" title="Eliminar seleccion">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content area -->
+    <div class="main-content">
+      <!-- Page thumbnails sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <span>Paginas</span>
+        </div>
+        <div class="thumbnail-list" id="thumbnail-list"></div>
+      </aside>
+
+      <!-- PDF canvas area -->
+      <main class="canvas-area" id="canvas-area">
+        <div class="canvas-scroll" id="canvas-scroll">
+          <div class="page-container" id="page-container"></div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Bottom status bar -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <span id="status-page">Pagina: -</span>
+        <span id="status-total"> / -</span>
+      </div>
+      <div class="status-center">
+        <button class="status-btn" id="btn-prev-page" title="Pagina anterior">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <input type="number" id="page-input" class="page-input" min="1" value="1">
+        <button class="status-btn" id="btn-next-page" title="Pagina siguiente">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="status-right">
+        <button class="status-btn" id="btn-zoom-out" title="Alejar">-</button>
+        <span id="status-zoom">100%</span>
+        <button class="status-btn" id="btn-zoom-in" title="Acercar">+</button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast hidden" id="toast">
+    <span id="toast-msg"></span>
+  </div>
+
+  <script src="../dist/renderer.bundle.js"></script>
+</body>
+</html>

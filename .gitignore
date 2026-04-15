@@ -1,0 +1,7 @@
+node_modules/
+dist/
+pdfs-test/
+*.exe
+*.dmg
+*.AppImage
+*.deb
