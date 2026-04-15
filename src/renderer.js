@@ -5,7 +5,7 @@ const fabric = require('fabric').fabric;
 const { PDFDocument, rgb, StandardFonts, degrees } = require('pdf-lib');
 
 // PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = '../dist/pdf.worker.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = '../bundle/pdf.worker.mjs';
 
 // ===== State =====
 const state = {

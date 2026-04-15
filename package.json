@@ -4,8 +4,8 @@
   "description": "PDFy - Editor de PDF local",
   "main": "main.js",
   "scripts": {
-    "copy-worker": "node -e \"require('fs').cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','dist/pdf.worker.mjs')\"",
-    "bundle": "esbuild src/renderer.js --bundle --outfile=dist/renderer.bundle.js --platform=browser --format=iife --loader:.js=js && npm run copy-worker",
+    "copy-worker": "node -e \"require('fs').cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','bundle/pdf.worker.mjs')\"",
+    "bundle": "esbuild src/renderer.js --bundle --outfile=bundle/renderer.bundle.js --platform=browser --format=iife --loader:.js=js && npm run copy-worker",
     "start": "npm run bundle && electron .",
     "build": "npm run bundle && electron-builder",
     "build:win": "npm run bundle && electron-builder --win",
@@ -36,10 +36,7 @@
     "mac": {
       "target": "dmg",
       "icon": "assets/icon.icns",
-      "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.inherit.plist"
+      "category": "public.app-category.productivity"
     },
     "linux": {
       "target": ["AppImage", "deb"],

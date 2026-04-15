@@ -67,30 +67,40 @@ function createWindow() {
 }
 
 async function openFile() {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Abrir PDF',
-    filters: [{ name: 'PDF', extensions: ['pdf'] }],
-    properties: ['openFile'],
-  });
-  if (!result.canceled && result.filePaths.length > 0) {
-    const filePath = result.filePaths[0];
-    const data = fs.readFileSync(filePath);
-    mainWindow.webContents.send('file-opened', {
-      data: data.toString('base64'),
-      path: filePath,
-      name: path.basename(filePath),
+  try {
+    const focusedWindow = BrowserWindow.getFocusedWindow() || mainWindow;
+    const result = await dialog.showOpenDialog(focusedWindow, {
+      title: 'Abrir PDF',
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      properties: ['openFile'],
     });
+    if (!result.canceled && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+      const data = fs.readFileSync(filePath);
+      mainWindow.webContents.send('file-opened', {
+        data: data.toString('base64'),
+        path: filePath,
+        name: path.basename(filePath),
+      });
+    }
+  } catch (err) {
+    console.error('[openFile] Error:', err);
   }
 }
 
 async function saveFileAs() {
-  const result = await dialog.showSaveDialog(mainWindow, {
-    title: 'Guardar PDF como...',
-    filters: [{ name: 'PDF', extensions: ['pdf'] }],
-    defaultPath: 'documento.pdf',
-  });
-  if (!result.canceled && result.filePath) {
-    mainWindow.webContents.send('save-file-as', { path: result.filePath });
+  try {
+    const focusedWindow = BrowserWindow.getFocusedWindow() || mainWindow;
+    const result = await dialog.showSaveDialog(focusedWindow, {
+      title: 'Guardar PDF como...',
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      defaultPath: 'documento.pdf',
+    });
+    if (!result.canceled && result.filePath) {
+      mainWindow.webContents.send('save-file-as', { path: result.filePath });
+    }
+  } catch (err) {
+    console.error('[saveFileAs] Error:', err);
   }
 }
 
@@ -109,17 +119,22 @@ ipcMain.handle('write-file', async (event, { filePath, data }) => {
 });
 
 ipcMain.handle('open-image-dialog', async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Seleccionar imagen',
-    filters: [{ name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }],
-    properties: ['openFile'],
-  });
-  if (!result.canceled && result.filePaths.length > 0) {
-    const filePath = result.filePaths[0];
-    const data = fs.readFileSync(filePath);
-    const ext = path.extname(filePath).toLowerCase().replace('.', '');
-    const mime = ext === 'jpg' ? 'jpeg' : ext;
-    return { data: `data:image/${mime};base64,${data.toString('base64')}`, name: path.basename(filePath) };
+  try {
+    const focusedWindow = BrowserWindow.getFocusedWindow() || mainWindow;
+    const result = await dialog.showOpenDialog(focusedWindow, {
+      title: 'Seleccionar imagen',
+      filters: [{ name: 'Imágenes', extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }],
+      properties: ['openFile'],
+    });
+    if (!result.canceled && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+      const data = fs.readFileSync(filePath);
+      const ext = path.extname(filePath).toLowerCase().replace('.', '');
+      const mime = ext === 'jpg' ? 'jpeg' : ext;
+      return { data: `data:image/${mime};base64,${data.toString('base64')}`, name: path.basename(filePath) };
+    }
+  } catch (err) {
+    console.error('[openImage] Error:', err);
   }
   return null;
 });
